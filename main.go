@@ -151,6 +151,7 @@ func main() {
 					name:                     piResp.Data.Product.Name,
 					url:                      u,
 					organization:             piResp.Data.Product.Organization.Name,
+					price:                    node.Price,
 					firstAppearanceEventName: piResp.Data.Product.FirstAppearanceEventName,
 					page:                     piResp.Data.Product.Page,
 				}
@@ -259,6 +260,7 @@ type displayDetail struct {
 	name                     string
 	url                      *url.URL
 	organization             string
+	price                    int
 	firstAppearanceEventName string
 	page                     int
 }
