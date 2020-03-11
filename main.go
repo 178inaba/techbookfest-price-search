@@ -75,11 +75,6 @@ func main() {
 	}
 	req.Header.Set("x-xsrf-token", xsrfToken)
 	req.Header.Set("content-type", "application/json")
-	req.Header.Set("origin", "https://techbookfest.org")
-	req.Header.Set("referer", "https://techbookfest.org/market")
-	req.Header.Set("sec-fetch-dest", "empty")
-	req.Header.Set("sec-fetch-mode", "cors")
-	req.Header.Set("sec-fetch-site", "same-origin")
 
 	resp, err := c.Do(req)
 	if err != nil {
@@ -119,11 +114,6 @@ func main() {
 		}
 		req.Header.Set("x-xsrf-token", xsrfToken)
 		req.Header.Set("content-type", "application/json")
-		req.Header.Set("origin", "https://techbookfest.org")
-		req.Header.Set("referer", "https://techbookfest.org/market")
-		req.Header.Set("sec-fetch-dest", "empty")
-		req.Header.Set("sec-fetch-mode", "cors")
-		req.Header.Set("sec-fetch-site", "same-origin")
 
 		resp, err := c.Do(req)
 		if err != nil {
