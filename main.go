@@ -47,25 +47,10 @@ func main() {
 	}
 
 	// Get book list.
-	gqlb := marketDashboardQuery{
-		OperationName: "MarketDashboardQuery",
-		Variables: marketDashboardVariables{
-			First:                       2000,
-			SuggestionProductInfo1ID:    "ProductInfo:6264122186399744",
-			SuggestionProductInfo2ID:    "ProductInfo:6264122186399744",
-			SuggestionProductInfo3ID:    "ProductInfo:6264122186399744",
-			SuggestionProductInfo4ID:    "ProductInfo:6264122186399744",
-			SuggestionProductInfo5ID:    "ProductInfo:6264122186399744",
-			SuggestionProductInfo6ID:    "ProductInfo:6264122186399744",
-			SuggestionProductInfo7ID:    "ProductInfo:6264122186399744",
-			SuggestionProductInfo8ID:    "ProductInfo:6264122186399744",
-			ShowProductInfoThumbnailDLC: false,
-		},
-		Query: "query MarketDashboardQuery($first: Int!, $after: String, $showProductInfoThumbnailDLC: Boolean!, $suggestionProductInfo1ID: ID!, $suggestionProductInfo2ID: ID!, $suggestionProductInfo3ID: ID!, $suggestionProductInfo4ID: ID!, $suggestionProductInfo5ID: ID!, $suggestionProductInfo6ID: ID!, $suggestionProductInfo7ID: ID!, $suggestionProductInfo8ID: ID!) {\n  suggestionProductInfo1: product(id: $suggestionProductInfo1ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo2: product(id: $suggestionProductInfo2ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo3: product(id: $suggestionProductInfo3ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo4: product(id: $suggestionProductInfo4ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo5: product(id: $suggestionProductInfo5ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo6: product(id: $suggestionProductInfo6ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo7: product(id: $suggestionProductInfo7ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo8: product(id: $suggestionProductInfo8ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  allProductVariants: productVariants(first: $first, after: $after, input: {route: \"market\"}) {\n    pageInfo {\n      hasNextPage\n      endCursor\n      __typename\n    }\n    nodes {\n      ...MarketTopAllProductVariantFragment\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment MarketTopSuggestionProductInfoFragment on ProductInfo {\n  id\n  ...ProductInfoThumbnailAtomFragment\n  __typename\n}\n\nfragment ProductInfoThumbnailAtomFragment on ProductInfo {\n  id\n  databaseID\n  name\n  organization {\n    id\n    name\n    __typename\n  }\n  images(first: 1) {\n    nodes {\n      id\n      url\n      height\n      width\n      __typename\n    }\n    __typename\n  }\n  downloadContent @include(if: $showProductInfoThumbnailDLC) {\n    id\n    fileName\n    downloadURL\n    __typename\n  }\n  __typename\n}\n\nfragment MarketTopAllProductVariantFragment on ProductVariant {\n  id\n  products(first: 1) {\n    nodes {\n      ...ProductInfoThumbnailAtomFragment\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n",
-	}
+	mdq := newMarketDashboardQuery(2000)
 
 	var b bytes.Buffer
-	if err := json.NewEncoder(&b).Encode(gqlb); err != nil {
+	if err := json.NewEncoder(&b).Encode(mdq); err != nil {
 		log.Fatal(err)
 	}
 
@@ -94,14 +79,7 @@ func main() {
 	fmt.Printf("All Books: %d\n", len(mdResp.Data.AllProductVariants.Nodes))
 	ddMap := map[string]displayDetail{}
 	for i, node := range mdResp.Data.AllProductVariants.Nodes {
-		piq := productInfoQuery{
-			OperationName: "ProductInfoQuery",
-			Variables: productInfoVariables{
-				ProductInfoID:               node.Products.Nodes[0].ID,
-				ShowProductInfoThumbnailDLC: false,
-			},
-			Query: "query ProductInfoQuery($productInfoID: ID!, $showProductInfoThumbnailDLC: Boolean!) {\n  viewer {\n    id\n    __typename\n  }\n  product(id: $productInfoID) {\n    ...ProductInfoFragment\n    ...ProductPurchaseCompleteFragment\n    __typename\n  }\n}\n\nfragment ProductInfoFragment on ProductInfo {\n  id\n  databaseID\n  name\n  description\n  page\n  firstAppearanceEventName\n  loginUserBookShelfItem {\n    id\n    causedAt\n    __typename\n  }\n  images(first: 4) {\n    nodes {\n      ...ProductThumbImageFragment\n      __typename\n    }\n    __typename\n  }\n  organization {\n    ...ProductInfoOrganization\n    __typename\n  }\n  productVariants(first: 20, input: {route: \"market\"}) {\n    nodes {\n      ...ProductInfoProductVariant\n      ...ProductVariantButtonFragment\n      __typename\n    }\n    __typename\n  }\n  recommendedProducts(first: 7, input: {fillInWithRecentlyUpdated: true}) {\n    nodes {\n      ...ProductInfoThumbnailAtomFragment\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ProductInfoProductVariant on ProductVariant {\n  id\n  name\n  price\n  marketShippingRequired\n  __typename\n}\n\nfragment ProductInfoOrganization on Organization {\n  id\n  name\n  __typename\n}\n\nfragment ProductThumbImageFragment on Image {\n  id\n  databaseID\n  url\n  height\n  width\n  __typename\n}\n\nfragment ProductInfoThumbnailAtomFragment on ProductInfo {\n  id\n  databaseID\n  name\n  organization {\n    id\n    name\n    __typename\n  }\n  images(first: 1) {\n    nodes {\n      id\n      url\n      height\n      width\n      __typename\n    }\n    __typename\n  }\n  downloadContent @include(if: $showProductInfoThumbnailDLC) {\n    id\n    fileName\n    downloadURL\n    __typename\n  }\n  __typename\n}\n\nfragment ProductVariantButtonFragment on ProductVariant {\n  id\n  name\n  price\n  __typename\n}\n\nfragment ProductPurchaseCompleteFragment on ProductInfo {\n  id\n  databaseID\n  name\n  organization {\n    id\n    name\n    __typename\n  }\n  __typename\n}\n",
-		}
+		piq := newProductInfoQuery(node.Products.Nodes[0].ID)
 
 		var b bytes.Buffer
 		if err := json.NewEncoder(&b).Encode(piq); err != nil {
@@ -216,6 +194,25 @@ type marketDashboardResponse struct {
 	} `json:"data"`
 }
 
+func newMarketDashboardQuery(first int) *marketDashboardQuery {
+	return &marketDashboardQuery{
+		OperationName: "MarketDashboardQuery",
+		Variables: marketDashboardVariables{
+			First:                       first,
+			SuggestionProductInfo1ID:    "ProductInfo:6264122186399744",
+			SuggestionProductInfo2ID:    "ProductInfo:6264122186399744",
+			SuggestionProductInfo3ID:    "ProductInfo:6264122186399744",
+			SuggestionProductInfo4ID:    "ProductInfo:6264122186399744",
+			SuggestionProductInfo5ID:    "ProductInfo:6264122186399744",
+			SuggestionProductInfo6ID:    "ProductInfo:6264122186399744",
+			SuggestionProductInfo7ID:    "ProductInfo:6264122186399744",
+			SuggestionProductInfo8ID:    "ProductInfo:6264122186399744",
+			ShowProductInfoThumbnailDLC: false,
+		},
+		Query: "query MarketDashboardQuery($first: Int!, $after: String, $showProductInfoThumbnailDLC: Boolean!, $suggestionProductInfo1ID: ID!, $suggestionProductInfo2ID: ID!, $suggestionProductInfo3ID: ID!, $suggestionProductInfo4ID: ID!, $suggestionProductInfo5ID: ID!, $suggestionProductInfo6ID: ID!, $suggestionProductInfo7ID: ID!, $suggestionProductInfo8ID: ID!) {\n  suggestionProductInfo1: product(id: $suggestionProductInfo1ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo2: product(id: $suggestionProductInfo2ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo3: product(id: $suggestionProductInfo3ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo4: product(id: $suggestionProductInfo4ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo5: product(id: $suggestionProductInfo5ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo6: product(id: $suggestionProductInfo6ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo7: product(id: $suggestionProductInfo7ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  suggestionProductInfo8: product(id: $suggestionProductInfo8ID) {\n    ...MarketTopSuggestionProductInfoFragment\n    __typename\n  }\n  allProductVariants: productVariants(first: $first, after: $after, input: {route: \"market\"}) {\n    pageInfo {\n      hasNextPage\n      endCursor\n      __typename\n    }\n    nodes {\n      ...MarketTopAllProductVariantFragment\n      __typename\n    }\n    __typename\n  }\n}\n\nfragment MarketTopSuggestionProductInfoFragment on ProductInfo {\n  id\n  ...ProductInfoThumbnailAtomFragment\n  __typename\n}\n\nfragment ProductInfoThumbnailAtomFragment on ProductInfo {\n  id\n  databaseID\n  name\n  organization {\n    id\n    name\n    __typename\n  }\n  images(first: 1) {\n    nodes {\n      id\n      url\n      height\n      width\n      __typename\n    }\n    __typename\n  }\n  downloadContent @include(if: $showProductInfoThumbnailDLC) {\n    id\n    fileName\n    downloadURL\n    __typename\n  }\n  __typename\n}\n\nfragment MarketTopAllProductVariantFragment on ProductVariant {\n  id\n  products(first: 1) {\n    nodes {\n      ...ProductInfoThumbnailAtomFragment\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n",
+	}
+}
+
 type productInfoQuery struct {
 	OperationName string               `json:"operationName"`
 	Variables     productInfoVariables `json:"variables"`
@@ -244,6 +241,17 @@ type productInfoResponse struct {
 			} `json:"productVariants"`
 		} `json:"product"`
 	} `json:"data"`
+}
+
+func newProductInfoQuery(productInfoID string) *productInfoQuery {
+	return &productInfoQuery{
+		OperationName: "ProductInfoQuery",
+		Variables: productInfoVariables{
+			ProductInfoID:               productInfoID,
+			ShowProductInfoThumbnailDLC: false,
+		},
+		Query: "query ProductInfoQuery($productInfoID: ID!, $showProductInfoThumbnailDLC: Boolean!) {\n  viewer {\n    id\n    __typename\n  }\n  product(id: $productInfoID) {\n    ...ProductInfoFragment\n    ...ProductPurchaseCompleteFragment\n    __typename\n  }\n}\n\nfragment ProductInfoFragment on ProductInfo {\n  id\n  databaseID\n  name\n  description\n  page\n  firstAppearanceEventName\n  loginUserBookShelfItem {\n    id\n    causedAt\n    __typename\n  }\n  images(first: 4) {\n    nodes {\n      ...ProductThumbImageFragment\n      __typename\n    }\n    __typename\n  }\n  organization {\n    ...ProductInfoOrganization\n    __typename\n  }\n  productVariants(first: 20, input: {route: \"market\"}) {\n    nodes {\n      ...ProductInfoProductVariant\n      ...ProductVariantButtonFragment\n      __typename\n    }\n    __typename\n  }\n  recommendedProducts(first: 7, input: {fillInWithRecentlyUpdated: true}) {\n    nodes {\n      ...ProductInfoThumbnailAtomFragment\n      __typename\n    }\n    __typename\n  }\n  __typename\n}\n\nfragment ProductInfoProductVariant on ProductVariant {\n  id\n  name\n  price\n  marketShippingRequired\n  __typename\n}\n\nfragment ProductInfoOrganization on Organization {\n  id\n  name\n  __typename\n}\n\nfragment ProductThumbImageFragment on Image {\n  id\n  databaseID\n  url\n  height\n  width\n  __typename\n}\n\nfragment ProductInfoThumbnailAtomFragment on ProductInfo {\n  id\n  databaseID\n  name\n  organization {\n    id\n    name\n    __typename\n  }\n  images(first: 1) {\n    nodes {\n      id\n      url\n      height\n      width\n      __typename\n    }\n    __typename\n  }\n  downloadContent @include(if: $showProductInfoThumbnailDLC) {\n    id\n    fileName\n    downloadURL\n    __typename\n  }\n  __typename\n}\n\nfragment ProductVariantButtonFragment on ProductVariant {\n  id\n  name\n  price\n  __typename\n}\n\nfragment ProductPurchaseCompleteFragment on ProductInfo {\n  id\n  databaseID\n  name\n  organization {\n    id\n    name\n    __typename\n  }\n  __typename\n}\n",
+	}
 }
 
 type displayDetail struct {
