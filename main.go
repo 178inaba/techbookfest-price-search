@@ -10,8 +10,10 @@ import (
 	"net/http/cookiejar"
 	"net/url"
 	"sort"
+	"sync"
 
 	"golang.org/x/net/publicsuffix"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -77,61 +79,77 @@ func main() {
 	}
 
 	fmt.Printf("All Books: %d\n", len(mdResp.Data.AllProductVariants.Nodes))
+
+	g, ctx := errgroup.WithContext(ctx)
+	limit := make(chan struct{}, 180)
+	var m sync.Mutex
 	ddMap := map[string]displayDetail{}
-	for i, node := range mdResp.Data.AllProductVariants.Nodes {
-		piq := newProductInfoQuery(node.Products.Nodes[0].ID)
+	for _, node := range mdResp.Data.AllProductVariants.Nodes {
+		node := node
+		g.Go(func() error {
+			limit <- struct{}{}
+			defer func() { <-limit }()
 
-		var b bytes.Buffer
-		if err := json.NewEncoder(&b).Encode(piq); err != nil {
-			log.Fatal(err)
-		}
+			piq := newProductInfoQuery(node.Products.Nodes[0].ID)
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://techbookfest.org/api/graphql", &b)
-		if err != nil {
-			log.Fatal(err)
-		}
-		req.Header.Set("x-xsrf-token", xsrfToken)
-		req.Header.Set("content-type", "application/json")
-
-		resp, err := c.Do(req)
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer resp.Body.Close()
-
-		if resp.StatusCode != http.StatusOK {
-			log.Fatalf("HTTP Status: %d.", resp.StatusCode)
-		}
-
-		var piResp productInfoResponse
-		if err := json.NewDecoder(resp.Body).Decode(&piResp); err != nil {
-			log.Fatal(err)
-		}
-
-		for _, node := range piResp.Data.Product.ProductVariants.Nodes {
-			if node.Price == 0 {
-				u, err := url.Parse("https://techbookfest.org/product/" + piResp.Data.Product.DatabaseID)
-				if err != nil {
-					log.Fatal(err)
-				}
-
-				ddMap[piResp.Data.Product.DatabaseID] = displayDetail{
-					name:                     piResp.Data.Product.Name,
-					url:                      u,
-					organization:             piResp.Data.Product.Organization.Name,
-					price:                    node.Price,
-					firstAppearanceEventName: piResp.Data.Product.FirstAppearanceEventName,
-					page:                     piResp.Data.Product.Page,
-				}
-
-				break
+			var b bytes.Buffer
+			if err := json.NewEncoder(&b).Encode(piq); err != nil {
+				log.Fatal(err)
 			}
-		}
 
-		fmt.Printf("...%d\r", i+1)
+			req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://techbookfest.org/api/graphql", &b)
+			if err != nil {
+				log.Fatal(err)
+			}
+			req.Header.Set("x-xsrf-token", xsrfToken)
+			req.Header.Set("content-type", "application/json")
+
+			resp, err := c.Do(req)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer resp.Body.Close()
+
+			if resp.StatusCode != http.StatusOK {
+				log.Fatalf("HTTP Status: %d.", resp.StatusCode)
+			}
+
+			var piResp productInfoResponse
+			if err := json.NewDecoder(resp.Body).Decode(&piResp); err != nil {
+				log.Fatal(err)
+			}
+
+			for _, node := range piResp.Data.Product.ProductVariants.Nodes {
+				if node.Price == 500 {
+					u, err := url.Parse("https://techbookfest.org/product/" + piResp.Data.Product.DatabaseID)
+					if err != nil {
+						log.Fatal(err)
+					}
+
+					m.Lock()
+					defer m.Unlock()
+					ddMap[piResp.Data.Product.DatabaseID] = displayDetail{
+						name:                     piResp.Data.Product.Name,
+						url:                      u,
+						organization:             piResp.Data.Product.Organization.Name,
+						price:                    node.Price,
+						firstAppearanceEventName: piResp.Data.Product.FirstAppearanceEventName,
+						page:                     piResp.Data.Product.Page,
+					}
+
+					break
+				}
+			}
+
+			return nil
+		})
 	}
 
 	fmt.Println()
+
+	if err := g.Wait(); err != nil {
+		log.Fatal(err)
+	}
 
 	dds := make([]displayDetail, 0, len(ddMap))
 	for _, dd := range ddMap {
