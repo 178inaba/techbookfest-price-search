@@ -120,7 +120,7 @@ func main() {
 			}
 
 			for _, node := range piResp.Data.Product.ProductVariants.Nodes {
-				if node.Price == 500 {
+				if node.Price == 0 {
 					u, err := url.Parse("https://techbookfest.org/product/" + piResp.Data.Product.DatabaseID)
 					if err != nil {
 						log.Fatal(err)
