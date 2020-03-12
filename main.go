@@ -130,11 +130,13 @@ func main() {
 					defer m.Unlock()
 					ddMap[piResp.Data.Product.DatabaseID] = displayDetail{
 						name:                     piResp.Data.Product.Name,
-						url:                      u,
+						description:              piResp.Data.Product.Description,
 						organization:             piResp.Data.Product.Organization.Name,
-						price:                    node.Price,
-						firstAppearanceEventName: piResp.Data.Product.FirstAppearanceEventName,
 						page:                     piResp.Data.Product.Page,
+						firstAppearanceEventName: piResp.Data.Product.FirstAppearanceEventName,
+						url:                      u,
+						price:                    node.Price,
+						physical:                 node.MarketShippingRequired,
 					}
 
 					break
@@ -144,8 +146,6 @@ func main() {
 			return nil
 		})
 	}
-
-	fmt.Println()
 
 	if err := g.Wait(); err != nil {
 		log.Fatal(err)
@@ -247,6 +247,7 @@ type productInfoResponse struct {
 		Product struct {
 			DatabaseID               string `json:"databaseID"`
 			Name                     string `json:"name"`
+			Description              string `json:"description"`
 			Page                     int    `json:"page"`
 			FirstAppearanceEventName string `json:"firstAppearanceEventName"`
 			Organization             struct {
@@ -254,7 +255,9 @@ type productInfoResponse struct {
 			} `json:"organization"`
 			ProductVariants struct {
 				Nodes []struct {
-					Price int `json:"price"`
+					Name                   string `json:"name"`
+					Price                  int    `json:"price"`
+					MarketShippingRequired bool   `json:"marketShippingRequired"`
 				} `json:"nodes"`
 			} `json:"productVariants"`
 		} `json:"product"`
@@ -274,9 +277,11 @@ func newProductInfoQuery(productInfoID string) *productInfoQuery {
 
 type displayDetail struct {
 	name                     string
-	url                      *url.URL
+	description              string
 	organization             string
-	price                    int
-	firstAppearanceEventName string
 	page                     int
+	firstAppearanceEventName string
+	url                      *url.URL
+	price                    int
+	physical                 bool
 }
