@@ -8,7 +8,7 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/178inaba/techbookfest-price-search"
+	"github.com/178inaba/techbookfest-price-search/techbookfest"
 	"golang.org/x/sync/errgroup"
 )
 
