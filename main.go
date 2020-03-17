@@ -34,7 +34,7 @@ func run() error {
 	fmt.Printf("All Books: %d\n", len(md.Data.AllProductVariants.Nodes))
 
 	g, ctx := errgroup.WithContext(ctx)
-	limit := make(chan struct{}, 180)
+	limit := make(chan struct{}, 50)
 	var m sync.Mutex
 	ddMap := map[string]displayDetail{}
 	for _, node := range md.Data.AllProductVariants.Nodes {
