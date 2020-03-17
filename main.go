@@ -13,16 +13,22 @@ import (
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
 	ctx := context.Background()
 
 	c, err := techbookfest.NewTechBookFest(ctx)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	md, err := c.GetMarketDashboard(ctx, 2000)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Printf("All Books: %d\n", len(md.Data.AllProductVariants.Nodes))
@@ -39,14 +45,14 @@ func main() {
 
 			pi, err := c.GetProductInfo(ctx, node.Products.Nodes[0].ID)
 			if err != nil {
-				log.Fatal(err)
+				return err
 			}
 
 			for _, node := range pi.Data.Product.ProductVariants.Nodes {
 				if node.Price == 0 {
 					u, err := url.Parse("https://techbookfest.org/product/" + pi.Data.Product.DatabaseID)
 					if err != nil {
-						log.Fatal(err)
+						return err
 					}
 
 					m.Lock()
@@ -71,7 +77,7 @@ func main() {
 	}
 
 	if err := g.Wait(); err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	dds := make([]displayDetail, 0, len(ddMap))
@@ -96,6 +102,8 @@ func main() {
 	for _, dd := range dds {
 		fmt.Printf("| [%s](%s) | %s | %s | %d |\n", dd.name, dd.url.String(), dd.organization, dd.firstAppearanceEventName, dd.page)
 	}
+
+	return nil
 }
 
 type displayDetail struct {
